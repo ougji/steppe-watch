@@ -15,11 +15,11 @@ Two satellite images of a mining site near Kokshetau, Kazakhstan, were compared 
 
 ### Threshold 35
 
-![Kokshetau image comparison at threshold 35, with 10.8% of usable pixels flagged](examples/kokshetau/threshold-35.png)
+![Kokshetau image comparison at threshold 35, with 10.8% of usable pixels flagged](threshold-35.png)
 
 ### Threshold 41
 
-![Kokshetau image comparison at threshold 41, with 6.3% of usable pixels flagged](examples/kokshetau/threshold-41.png)
+![Kokshetau image comparison at threshold 41, with 6.3% of usable pixels flagged](threshold-41.png)
 
 Increasing the threshold reduced the number of flagged pixels. This demonstrates sensitivity to the threshold; it does not establish which setting is more accurate. Reference annotations are needed to distinguish actual land changes from effects such as illumination, vegetation, shadows or alignment differences.
 
