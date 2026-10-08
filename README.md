@@ -15,7 +15,7 @@ Two satellite images of a mining site near Kokshetau, Kazakhstan, were compared 
 
 ### Threshold 35
 
-![Kokshetau image comparison at threshold 35, with 10.8% of usable pixels flagged](threshold-35.png)
+![Kokshetau image comparison at threshold 35, with 10.8% of usable pixels flagged](threshold-35(1).png)
 
 ### Threshold 41
 
