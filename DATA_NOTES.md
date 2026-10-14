@@ -9,7 +9,11 @@
 - Intended use: exercise the software pipeline only.
 - No real satellite observations or mining licenses are included.
 
-## Real pilot — not collected yet
+## Preliminary Kokshetau pilot — source data not included
+
+The README includes two application screenshots from a preliminary Kokshetau comparison. The original input pair, acquisition dates, geographic metadata and reference annotations are not present in the repository, so the experiment is not independently reproducible yet. The v0.2 tooling upgrade does not add or validate those missing inputs.
+
+For new experiments, copy `examples/metadata.json` and record provenance through the CLI's `--metadata` option or the app's provenance fields. Bundles preserve decoded inputs and hashes; retain provider originals and processing records separately.
 
 Complete this section when real images are added:
 

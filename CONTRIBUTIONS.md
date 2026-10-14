@@ -18,5 +18,6 @@ Before presenting the project, run it, understand the core method and make concr
 | Date | Question or task | Your change | Evidence or result | Next decision |
 | --- | --- | --- | --- | --- |
 | 2026-10-04 | Establish a runnable starter | AI-assisted scaffold; personal review pending | Synthetic demo and baseline tests | Run locally and choose real pilot data |
+| 2026-10-14 | Upgrade the review and reproducibility workflow | Codex-assisted v0.2 implementation: shared pipeline, region inspection, reference evaluation, optional correction, portable exports, packaging and CI | Automated numerical, input, export/replay, CLI and app checks; synthetic data only | Personal review and documented real-data evaluation remain pending |
 
 Update this log with changes and outcomes as you complete them.

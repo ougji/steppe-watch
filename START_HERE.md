@@ -1,64 +1,59 @@
 # Your first session
 
-Goal: run a working demo, understand one part of it, and publish the first repository.
+Goal: run the workbench, inspect a candidate region and reproduce an experiment.
 
-## 1. Open the folder
+## 1. Install and open
 
-Extract this ZIP. Open the `steppe-watch` folder in VS Code, then choose **Terminal → New Terminal**. The terminal should be in the folder containing `app.py` and `requirements.txt`.
-
-You need Python 3.10 or newer. If Python is not installed, get it from [python.org](https://www.python.org/downloads/), enable the installer option to add Python to PATH, then reopen VS Code. See the README for an optional virtual environment setup.
-
-## 2. Run it
+From the repository folder with Python 3.10 or newer:
 
 ```bash
-python -m pip install -r requirements.txt
+python -m venv .venv
+```
+
+Windows PowerShell: `.venv\Scripts\Activate.ps1`
+
+macOS/Linux: `source .venv/bin/activate`
+
+```bash
+python -m pip install -e ".[dev]"
 python -m streamlit run app.py
 ```
 
-Open the local URL shown in the terminal if the browser does not open automatically. The app starts with synthetic example images.
+Open the local URL printed in the terminal. The app starts with generated terrain, not real satellite observations.
 
-## 3. Understand one feature
+## 2. Inspect the result
 
-Try difference thresholds **0**, **35** and **255**. What changes on the orange overlay? At 255, no pixel can pass the strict greater-than test.
+1. Open **Compare imagery** and compare the before, after and orange overlay. Expand the swipe view.
+2. Open **Inspect regions** to see the largest region's image crop and pixel measurements.
+3. Open **Evaluate & tune** to compare the synthetic reference. Perfect synthetic scores only check this deliberately simple example.
+4. Set the threshold to 255. No pixel can pass the strict greater-than test. Restore it to 35.
+5. Choose **Expansion + brightness shift**, then enable **Correct global brightness offset**. Explain why this helps the synthetic scenario and why its stable-majority assumption may fail on real imagery.
+6. Enable **Compare nearby thresholds** and inspect the sensitivity curve. It is not an accuracy curve.
 
-Open `change_watch/core.py`. Find:
+## 3. Save and rerun
 
-```python
-candidate = (score > threshold) & valid
+In **Export experiment**, prepare and download the ZIP. Extract it and inspect `report.json`, `regions.csv` and `REPRODUCE.txt`. The bundle includes its input images, so check image rights before sharing a real experiment.
+
+Or use the CLI:
+
+```bash
+python -m change_watch --demo --sensitivity --zip --out outputs/first-demo
 ```
 
-Explain how this line combines the difference threshold with usable pixels. This version has no trained ML model; it establishes a comparison baseline.
+Choose a new output folder for subsequent runs. Existing experiments are preserved.
 
-Run the tests:
+## 4. Check the software
 
 ```bash
 python -m unittest discover -s tests -v
+python -m ruff check .
+python -m ruff format --check .
 ```
 
-## 4. Publish the first version
+The test suite covers the original baseline, masks, region statistics, correction, image validation, exported results, command-line errors and app interactions.
 
-On [GitHub](https://github.com/new), create an empty public repository called `steppe-watch`. GitHub will display its exact repository URL and commands.
+## 5. Bring your own imagery
 
-In the project terminal:
+Prepare two aligned 8-bit RGB PNG/JPEG crops. Choose **Upload images**, add exclusions/reference annotations if available, and record provenance. Keep unlabelled pixels out of evaluation using the usable mask. Follow [the experiment guide](docs/EXPERIMENTS.md) and complete [DATA_NOTES.md](DATA_NOTES.md).
 
-```bash
-git init
-git add .
-git commit -m "Add reproducible RGB change detection baseline"
-git branch -M main
-```
-
-Add the remote using the URL GitHub gives you, then push:
-
-```bash
-git remote add origin YOUR_REPOSITORY_URL
-git push -u origin main
-```
-
-Replace `YOUR_REPOSITORY_URL` with the actual HTTPS URL. If Git asks for your name/email, follow its displayed configuration instructions. If Git is missing, install it from [git-scm.com](https://git-scm.com/downloads).
-
-## 5. The next session
-
-Pick one real location and obtain two comparable, permitted images. Record the source and dates in `DATA_NOTES.md`. Run the baseline, inspect the errors, and use those observations to choose your first improvement.
-
-Tonight is complete when the demo runs, you understand the threshold, and the repository is online.
+A useful next contribution is a permitted image pair with documented source/dates, checked alignment and independent annotations. Record the result and your own review in [CONTRIBUTIONS.md](CONTRIBUTIONS.md).
