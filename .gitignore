@@ -5,3 +5,7 @@ __pycache__/
 .streamlit/secrets.toml
 outputs/
 .DS_Store
+.ruff_cache/
+*.egg-info/
+build/
+dist/

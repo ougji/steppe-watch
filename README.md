@@ -1,8 +1,21 @@
 # Steppe Watch
 
-A Python and Streamlit prototype for comparing satellite images and highlighting candidate land changes around mining sites in Kazakhstan.
+[![Python checks](https://github.com/ougji/steppe-watch/actions/workflows/ci.yml/badge.svg)](https://github.com/ougji/steppe-watch/actions/workflows/ci.yml)
 
-**Status: v0.1 prototype.** The current version uses a classical RGB difference baseline. It compares two aligned images, highlights candidate visual changes, and exports a mask and a JSON report. A preliminary visual experiment has been run on a site near Kokshetau. Training and evaluating a machine learning model is planned for a later version.
+A Python and Streamlit workbench for comparing satellite image crops and reviewing candidate land changes around mining sites in Kazakhstan.
+
+**Status: v0.2 research prototype.** Compare aligned imagery, inspect individual regions, evaluate reference annotations and export a reproducible experiment. The default detector is the original RGB difference baseline; an optional median brightness-offset correction supports controlled comparisons. There is no trained model. Real-image accuracy has not been measured.
+
+## What you can do
+
+- Compare before/after imagery with an orange overlay, swipe view, score map and explicit pixel exclusions.
+- Inspect ranked regions with local image crops, pixel bounding boxes, mean scores and CSV export.
+- Upload reference masks and inspect precision, recall, F1, IoU, confusion counts and an error map.
+- Compare nearby thresholds while holding the rest of the experiment fixed.
+- Record imagery provenance and export a ZIP with inputs, masks, full-precision scores, a versioned report and a rerun command.
+- Run the same pipeline from the CLI or Python, with shared input checks and automated tests.
+
+Start with the [quick start](#run), [first-session walkthrough](START_HERE.md) or [experiment guide](docs/EXPERIMENTS.md). Changes are recorded in [CHANGELOG.md](CHANGELOG.md).
 
 ## Preliminary experiment near Kokshetau
 
@@ -56,17 +69,19 @@ source .venv/bin/activate
 Install dependencies and open the app:
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -e ".[dev]"
 python -m streamlit run app.py
 ```
 
-The app opens with a labelled synthetic demo. Choose **Upload images** to compare your own aligned RGB PNG/JPEG crops. An optional white/black usable-pixel mask excludes clouds, shadows, or missing imagery that you have identified on either date.
+The app opens with a labelled synthetic demo. Choose **Upload images** to compare your own aligned 8-bit RGB PNG/JPEG crops, up to 4 million pixels and 25 MiB each. Optional grayscale usable/reference masks control exclusions and evaluation. The second demo scenario adds a brightness shift so you can inspect the experimental correction. No credentials or external imagery service is required. For runtime dependencies only, `python -m pip install -r requirements.txt` still works.
 
 ## Reproduce a comparison without the interface
 
 ```bash
-python -m change_watch --demo --out outputs/demo
+python -m change_watch --demo --sensitivity --zip --out outputs/demo
 python -m unittest discover -s tests -v
+python -m ruff check .
+python -m ruff format --check .
 ```
 
 For your own images:
@@ -77,7 +92,9 @@ python -m change_watch --before before.png --after after.png --valid-mask usable
 
 Omit `--valid-mask` if you have no usable-pixel mask. Optionally add `--truth reference_change_mask.png` to compute precision, recall, F1 and IoU against your reference annotations. White pixels indicate change; black indicates no change. Metrics with zero denominators are written as `null`, rather than claiming perfect performance.
 
-Outputs: `overlay.png`, `change_mask.png`, `difference.png`, `report.json`.
+Use a **new or empty output directory** for each run. Add `--metadata examples/metadata.json` to record source/site/dates, `--connectivity 8` to join diagonal neighbours, `--correction median_offset` for the experimental correction, and `--sensitivity --zip` for threshold comparisons and a portable bundle. After installation, `steppe-watch` is also available as a command.
+
+Outputs retain `overlay.png`, `change_mask.png`, `difference.png` and `report.json`. They now also include decoded before/after images, the usable/reference masks, `scores.npy`, `regions.csv`, `metadata.json` and `REPRODUCE.txt`. `--zip` adds `experiment.zip`. See the [artifact reference](docs/EXPERIMENTS.md#save-and-reproduce).
 
 ## Method
 
@@ -87,7 +104,21 @@ Outputs: `overlay.png`, `change_mask.png`, `difference.png`, `report.json`.
 4. Group four-connected pixels and discard regions smaller than the minimum region size.
 5. Report flagged pixels as a fraction of usable pixels. This is not an estimate of changed hectares or a probability of mining.
 
-An RGB difference score is sensitive to illumination, seasons, shadows and registration errors. There is no automatic cloud detection, image registration, georeferencing, or radiometric correction yet. Use comparable imagery and exclude unsuitable pixels. Real satellite work will need those additional controls.
+An RGB difference score is sensitive to illumination, seasons, shadows and registration errors. The optional median correction assumes most usable pixels are stable and may suppress real widespread change; it is not calibrated radiometric normalization. There is no automatic cloud detection, image registration or georeferencing. Use comparable imagery and exclude unsuitable pixels.
+
+## Project structure
+
+| Path | Responsibility |
+| --- | --- |
+| `app.py` | Streamlit review interface |
+| `change_watch/core.py` | Detector, connected regions, sensitivity and evaluation |
+| `change_watch/analysis.py` | Shared pipeline, metadata, input fingerprints and reports |
+| `change_watch/io.py` | Consistent bounded image decoding |
+| `change_watch/export.py` | Reproducible artifacts and ZIP bundles |
+| `change_watch/__main__.py` | Installable CLI |
+| `tests/` | Numerical, input, CLI, export and Streamlit interaction tests |
+
+GitHub Actions runs tests and lint/format checks on Windows and Linux with Python 3.10 and 3.12, and saves a demo experiment artifact. Root `core.py` and `demo.py` preserve old imports while delegating to the package.
 
 ## Evaluation status
 

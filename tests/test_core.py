@@ -62,7 +62,11 @@ class ChangeTests(unittest.TestCase):
                 detect_changes(self.before, self.before, min_pixels=value)
 
     def test_non_rgb_and_non_uint8_images_are_rejected(self):
-        for image in [self.before[:, :, 0], self.before.astype(float), np.zeros((0, 0, 3), dtype=np.uint8)]:
+        for image in [
+            self.before[:, :, 0],
+            self.before.astype(float),
+            np.zeros((0, 0, 3), dtype=np.uint8),
+        ]:
             with self.assertRaises(ValueError):
                 detect_changes(image, image)
 
