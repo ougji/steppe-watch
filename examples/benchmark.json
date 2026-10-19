@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "synthetic": true,
+  "cases": [
+    {
+      "id": "quarry-expansion",
+      "before": "synthetic_before.png",
+      "after": "synthetic_after.png",
+      "truth": "synthetic_truth.png",
+      "metadata": {"site": "Generated quarry", "notes": "Artificial expansion; pipeline check only."}
+    },
+    {
+      "id": "expansion-brightness-shift",
+      "before": "synthetic_before.png",
+      "after": "synthetic_after_brightness.png",
+      "truth": "synthetic_truth.png",
+      "metadata": {"site": "Generated quarry with exposure shift", "notes": "Same artificial expansion; +45 RGB after-image offset, clipped at 255. Not an independent site."}
+    }
+  ]
+}

@@ -54,6 +54,14 @@ The test suite covers the original baseline, masks, region statistics, correctio
 
 ## 5. Bring your own imagery
 
-Prepare two aligned 8-bit RGB PNG/JPEG crops. Choose **Upload images**, add exclusions/reference annotations if available, and record provenance. Keep unlabelled pixels out of evaluation using the usable mask. Follow [the experiment guide](docs/EXPERIMENTS.md) and complete [DATA_NOTES.md](DATA_NOTES.md).
+Prepare two aligned 8-bit RGB PNG/JPEG crops. Choose **Upload images**, add exclusions/reference annotations if available, and record provenance. For partial annotations, use **Annotation coverage mask** to keep unknown labels out of metrics while preserving detection across usable pixels. Follow [the experiment guide](docs/EXPERIMENTS.md) and complete [DATA_NOTES.md](DATA_NOTES.md).
+
+## 6. Compare settings across pairs
+
+```bash
+python -m change_watch.benchmark examples/benchmark.json --out outputs/first-benchmark
+```
+
+Open `benchmark.json` for pooled and per-pair summaries, and `cases.csv` for each result. The included manifest checks an artificial expansion and a brightness-shifted copy; they are not independent real locations. Follow [the benchmark guide](docs/BENCHMARKS.md) to substitute your own annotated pairs.
 
 A useful next contribution is a permitted image pair with documented source/dates, checked alignment and independent annotations. Record the result and your own review in [CONTRIBUTIONS.md](CONTRIBUTIONS.md).

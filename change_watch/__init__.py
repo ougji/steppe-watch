@@ -1,3 +1,3 @@
 """RGB image change detection baseline for Steppe Watch."""
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

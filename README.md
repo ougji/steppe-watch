@@ -4,7 +4,7 @@
 
 A Python and Streamlit workbench for comparing satellite image crops and reviewing candidate land changes around mining sites in Kazakhstan.
 
-**Status: v0.2 research prototype.** Compare aligned imagery, inspect individual regions, evaluate reference annotations and export a reproducible experiment. The default detector is the original RGB difference baseline; an optional median brightness-offset correction supports controlled comparisons. There is no trained model. Real-image accuracy has not been measured.
+**Status: v0.3 research prototype.** Compare aligned imagery, inspect individual regions, evaluate partial reference annotations, benchmark multiple pairs and export a reproducible experiment. The default detector is the original RGB difference baseline; an optional median brightness-offset correction supports controlled comparisons. There is no trained model. Real-image accuracy has not been measured.
 
 ## What you can do
 
@@ -13,6 +13,7 @@ A Python and Streamlit workbench for comparing satellite image crops and reviewi
 - Upload reference masks and inspect precision, recall, F1, IoU, confusion counts and an error map.
 - Evaluate partially annotated crops with a separate annotation coverage mask, preserving detection across all usable pixels.
 - Compare nearby thresholds while holding the rest of the experiment fixed.
+- Benchmark multiple annotated image pairs under fixed settings, comparing baseline and brightness correction with pooled and per-pair metrics.
 - Record imagery provenance and export a ZIP with inputs, masks, full-precision scores, a versioned report and a rerun command.
 - Run the same pipeline from the CLI or Python, with shared input checks and automated tests.
 
@@ -97,6 +98,14 @@ Use a **new or empty output directory** for each run. Add `--metadata examples/m
 
 Outputs retain `overlay.png`, `change_mask.png`, `difference.png` and `report.json`. They also include decoded before/after images, the usable/reference masks, `scores.npy`, `region_labels.npy`, `regions.csv`, `metadata.json` and `REPRODUCE.txt`. The label array preserves exact region shapes and links every retained pixel to its CSV region ID. Rerun commands preserve fractional thresholds at full precision. `--zip` adds `experiment.zip`. See the [artifact reference](docs/EXPERIMENTS.md#save-and-reproduce).
 
+## Evaluate multiple pairs
+
+```bash
+python -m change_watch.benchmark examples/benchmark.json --out outputs/benchmark
+```
+
+This runs the baseline and brightness correction on two labelled synthetic scenarios, saving `benchmark.json` and `cases.csv`. Paths are relative to the manifest, so it also works from another directory. Copy the manifest for your own annotated pairs; use independent held-out examples for accuracy estimates. See [the benchmark guide](docs/BENCHMARKS.md) for the schema, aggregation rules and synthetic results.
+
 ## Method
 
 1. Accept two 8-bit RGB images on the same pixel grid. The tool rejects different dimensions; the user must establish geographic alignment separately.
@@ -117,6 +126,7 @@ An RGB difference score is sensitive to illumination, seasons, shadows and regis
 | `change_watch/io.py` | Consistent bounded image decoding |
 | `change_watch/export.py` | Reproducible artifacts and ZIP bundles |
 | `change_watch/__main__.py` | Installable CLI |
+| `change_watch/benchmark.py` | Dataset manifests, fixed-setting comparisons and aggregate metrics |
 | `tests/` | Numerical, input, CLI, export and Streamlit interaction tests |
 
 GitHub Actions runs tests and lint/format checks on Windows and Linux with Python 3.10 and 3.12, and saves a demo experiment artifact. Root `core.py` and `demo.py` preserve old imports while delegating to the package.

@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-10-19
+
+- Add manifest-driven batch evaluation with per-pair JSON/CSV results, pooled pixel metrics, macro averages and explicit counts of defined metrics; include a runnable two-scenario synthetic benchmark.
 
 - Separate annotation coverage from usable-pixel exclusions in Python, CLI and app; report evaluated coverage and preserve it in exported experiments (report schema 1.1).
 

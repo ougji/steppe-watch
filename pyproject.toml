@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "steppe-watch"
-version = "0.2.0"
+version = "0.3.0"
 description = "Reproducible RGB change analysis for satellite image crops"
 readme = "README.md"
 requires-python = ">=3.10"
