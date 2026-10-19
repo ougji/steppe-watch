@@ -94,7 +94,7 @@ def main():
             f"Steppe Watch {__version__} · RGB baseline\n\nNo trained model or automatic alignment."
         )
 
-    truth, valid, metadata = None, None, {}
+    truth, valid, evaluation_mask, metadata = None, None, None, {}
     synthetic = source == "Synthetic demo"
     if synthetic:
         before, after, truth = synthetic_pair()
@@ -116,13 +116,19 @@ def main():
                 "Usable-pixel mask (optional)",
                 type=["png"],
                 key="valid",
-                help="White = usable on BOTH dates. Black excludes clouds, shadows, missing data or unlabelled areas.",
+                help="White = usable on BOTH dates. Black excludes clouds, shadows and missing data.",
             )
             truth_file = st.file_uploader(
                 "Reference change mask (optional)",
                 type=["png"],
                 key="truth",
-                help="White = known change; black = known unchanged. Exclude unknown annotations in the usable mask.",
+                help="White = known change; black = known unchanged. Use annotation coverage to exclude unknown labels.",
+            )
+            evaluation_file = st.file_uploader(
+                "Annotation coverage mask (optional)",
+                type=["png"],
+                key="evaluation_mask",
+                help="White = labelled; black = unknown. Requires a reference mask. Detection still uses all usable pixels.",
             )
         with st.expander("Record image provenance"):
             metadata["site"] = st.text_input("Site or experiment name", max_chars=200)
@@ -149,6 +155,7 @@ def main():
             before, after = load_image(before_file), load_image(after_file)
             valid = load_image(valid_file, mask=True) if valid_file else None
             truth = load_image(truth_file, mask=True) if truth_file else None
+            evaluation_mask = load_image(evaluation_file, mask=True) if evaluation_file else None
         except (ValueError, OSError) as error:
             st.error(f"Cannot read image: {error}")
             st.stop()
@@ -163,6 +170,7 @@ def main():
                 min_pixels=min_pixels,
                 valid_mask=valid,
                 truth=truth,
+                evaluation_mask=evaluation_mask,
                 connectivity=connectivity,
                 correction=correction,
                 synthetic=synthetic,
@@ -278,6 +286,11 @@ def main():
             )
         else:
             st.caption(report["evaluation_scope"])
+            st.caption(
+                f"Evaluated {report['evaluation_pixels']:,} annotated pixels "
+                f"({report['evaluation_fraction_of_usable']:.1%} of usable coverage). "
+                "Detection and flagged percentages still use all usable pixels."
+            )
             for column, key in zip(st.columns(4), ("precision", "recall", "f1", "iou")):
                 value = report["evaluation"][key]
                 column.metric(
@@ -288,13 +301,13 @@ def main():
             errors[result.mask & truth & result.valid] = [25, 123, 94]
             errors[result.mask & ~truth & result.valid] = [222, 96, 42]
             errors[~result.mask & truth & result.valid] = [65, 109, 184]
-            errors[~result.valid] = [105, 117, 130]
+            errors[~analysis.evaluation_mask] = [105, 117, 130]
             image_columns(
                 [
                     (truth.astype(np.uint8) * 255, "Reference · white = change"),
                     (
                         errors,
-                        "Green = true positive · orange = false positive · blue = missed · slate = excluded",
+                        "Green = true positive · orange = false positive · blue = missed · slate = unevaluated",
                     ),
                 ]
             )

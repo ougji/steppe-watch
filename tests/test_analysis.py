@@ -118,6 +118,65 @@ class AnalysisTests(unittest.TestCase):
         valid = predicted.copy()
         self.assertEqual(evaluate_mask(predicted, truth, valid)["recall"], 1)
 
+    def test_partial_annotations_preserve_detection_and_region_filtering(self):
+        before = np.zeros((4, 4, 3), dtype=np.uint8)
+        after = before.copy()
+        after[1:3, 1:3] = 120
+        truth = np.zeros((4, 4), dtype=bool)
+        truth[1, 1] = True
+        annotated = truth.copy()
+        valid = np.ones_like(truth)
+        valid[0, 0] = False
+        analysis = analyze_pair(
+            before,
+            after,
+            truth=truth,
+            valid_mask=valid,
+            evaluation_mask=annotated,
+            min_pixels=4,
+        )
+        baseline = analyze_pair(before, after, valid_mask=valid, min_pixels=4)
+        np.testing.assert_array_equal(analysis.result.mask, baseline.result.mask)
+        np.testing.assert_array_equal(analysis.result.score, baseline.result.score)
+        self.assertEqual(analysis.report["changed_pixels"], 4)
+        self.assertEqual(analysis.report["evaluation_pixels"], 1)
+        self.assertEqual(analysis.report["unevaluated_usable_pixels"], 14)
+        self.assertEqual(analysis.report["evaluation_fraction_of_usable"], 1 / 15)
+        self.assertEqual(analysis.report["evaluation"]["iou"], 1)
+        self.assertNotIn("evaluation", baseline.report)
+
+    def test_evaluation_mask_validation(self):
+        image = np.zeros((2, 2, 3), dtype=np.uint8)
+        truth = np.zeros((2, 2), dtype=bool)
+        for mask in (np.ones((1, 2), dtype=bool), truth.astype(np.uint8), truth):
+            with self.subTest(mask=mask), self.assertRaises(ValueError):
+                analyze_pair(image, image, truth=truth, evaluation_mask=mask)
+        with self.assertRaisesRegex(ValueError, "requires a reference"):
+            analyze_pair(image, image, evaluation_mask=~truth)
+        valid = np.array([[True, False], [False, False]])
+        with self.assertRaises(ValueError):
+            analyze_pair(image, image, truth=truth, valid_mask=valid, evaluation_mask=~valid)
+
+    def test_annotation_coverage_changes_run_identity_and_is_exported(self):
+        before, after, truth = synthetic_pair(size=64)
+        annotated = np.zeros_like(truth)
+        annotated[:32] = True
+        full = analyze_pair(before, after, truth=truth)
+        partial = analyze_pair(before, after, truth=truth, evaluation_mask=annotated)
+        self.assertNotEqual(full.report["run_id"], partial.report["run_id"])
+        files = build_artifacts(partial, before, after, truth)
+        replay = analyze_pair(
+            load_image(files["before.png"]),
+            load_image(files["after.png"]),
+            truth=load_image(files["reference_mask.png"], mask=True),
+            valid_mask=load_image(files["usable_mask.png"], mask=True),
+            evaluation_mask=load_image(files["evaluation_mask.png"], mask=True),
+        )
+        self.assertEqual(partial.report["run_id"], replay.report["run_id"])
+        self.assertEqual(partial.report["evaluation"], replay.report["evaluation"])
+        np.testing.assert_array_equal(partial.result.labels, replay.result.labels)
+        self.assertIn("--evaluation-mask evaluation_mask.png", files["REPRODUCE.txt"].decode())
+
     def test_metadata_validation(self):
         self.assertEqual(validate_metadata({"site": "  Pilot  ", "source": ""}), {"site": "Pilot"})
         for metadata in (

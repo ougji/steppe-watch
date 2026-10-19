@@ -6,7 +6,7 @@ Use two permitted 8-bit RGB PNG/JPEG crops on the same pixel grid. Record the so
 
 The app and CLI accept at most 4 million pixels and 25 MiB per image. EXIF orientation is applied consistently. Transparency, high-bit-depth images and coloured masks are rejected instead of being silently interpreted. Prepare radiometrically suitable RGB crops from original satellite products separately.
 
-Create a grayscale usable mask: values above 127 are usable on **both** dates. Exclude clouds, shadows and missing data. For evaluation on partial annotations, also exclude unlabelled/uncertain pixels. A black reference pixel means known unchanged, not unknown. An all-excluded mask is an error.
+Create a grayscale usable mask: values above 127 are usable on **both** dates. Exclude clouds, shadows and missing data. An all-excluded mask is an error. Keep annotation coverage separate: unlabelled pixels can still be suitable for detection.
 
 ## Start with the baseline
 
@@ -24,7 +24,11 @@ The app's second synthetic scenario adds a uniform +45 RGB offset to the generat
 
 ## Evaluate and tune separately
 
-Supply a grayscale reference mask with white for annotated change and black for annotated stable areas. Precision, recall, F1 and IoU are computed only on usable pixels. Undefined ratios are JSON `null` / “Undefined” in the app. Inspect the error map: green true positives, orange false positives, blue misses and slate exclusions.
+Supply a grayscale reference mask with white for annotated change and black for annotated stable areas. If only part of the crop is labelled, add `--evaluation-mask annotated.png` (or the app's **Annotation coverage mask**): white marks labelled pixels, black marks unknown labels. It requires a reference mask. Without it, every usable pixel is assumed annotated.
+
+Precision, recall, F1 and IoU use the intersection of annotation coverage and usable pixels. A black reference pixel inside that intersection means known unchanged, never unknown. Empty intersections are errors. Annotation coverage does not change brightness correction, region filtering, detection counts or the flagged-pixel denominator. The report records evaluated pixels, unevaluated usable pixels and coverage as a fraction of usable pixels. Coverage also contributes to the run ID.
+
+Undefined ratios are JSON `null` / “Undefined” in the app. Inspect the error map: green true positives, orange false positives, blue misses and slate unevaluated pixels (unknown or unusable).
 
 `--sensitivity` computes the current threshold, ±10, ±20 and the 0/255 endpoints (deduplicated and clipped). It reuses the score and holds other settings fixed. The curve shows sensitivity, not an automatic optimum. Do not tune parameters on a held-out evaluation set. Separate sites or independent image pairs are better evaluation units than adjacent pixels.
 
@@ -41,6 +45,7 @@ Use a new or empty output directory for each run; previous results are never sil
 | `before.png`, `after.png` | Exact decoded, EXIF-oriented RGB inputs |
 | `usable_mask.png` | White usable, black excluded |
 | `reference_mask.png` | Optional supplied/generated reference |
+| `evaluation_mask.png` | Annotated AND usable pixels used for metrics; included with every reference |
 | `change_mask.png` | Retained flagged pixels |
 | `overlay.png` | After image with orange candidates |
 | `difference.png` | Truncated 8-bit score preview; excluded pixels are zero |

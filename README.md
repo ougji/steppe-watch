@@ -11,6 +11,7 @@ A Python and Streamlit workbench for comparing satellite image crops and reviewi
 - Compare before/after imagery with an orange overlay, swipe view, score map and explicit pixel exclusions.
 - Inspect ranked regions with local image crops, pixel bounding boxes, mean scores and CSV export.
 - Upload reference masks and inspect precision, recall, F1, IoU, confusion counts and an error map.
+- Evaluate partially annotated crops with a separate annotation coverage mask, preserving detection across all usable pixels.
 - Compare nearby thresholds while holding the rest of the experiment fixed.
 - Record imagery provenance and export a ZIP with inputs, masks, full-precision scores, a versioned report and a rerun command.
 - Run the same pipeline from the CLI or Python, with shared input checks and automated tests.
@@ -90,7 +91,7 @@ For your own images:
 python -m change_watch --before before.png --after after.png --valid-mask usable.png --threshold 35 --min-pixels 25 --out outputs/site
 ```
 
-Omit `--valid-mask` if you have no usable-pixel mask. Optionally add `--truth reference_change_mask.png` to compute precision, recall, F1 and IoU against your reference annotations. White pixels indicate change; black indicates no change. Metrics with zero denominators are written as `null`, rather than claiming perfect performance.
+Omit `--valid-mask` if you have no usable-pixel mask. Optionally add `--truth reference_change_mask.png` to compute precision, recall, F1 and IoU against your reference annotations. White pixels indicate change; black indicates no change. For partial annotations, add `--evaluation-mask annotated.png`: white marks known labels and black marks unknown areas. Evaluation uses annotated usable pixels; detection still uses every usable pixel. Metrics with zero denominators are written as `null`.
 
 Use a **new or empty output directory** for each run. Add `--metadata examples/metadata.json` to record source/site/dates, `--connectivity 8` to join diagonal neighbours, `--correction median_offset` for the experimental correction, and `--sensitivity --zip` for threshold comparisons and a portable bundle. After installation, `steppe-watch` is also available as a command.
 

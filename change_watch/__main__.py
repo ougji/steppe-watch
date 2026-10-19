@@ -35,6 +35,11 @@ def main(argv=None):
     parser.add_argument(
         "--truth", type=Path, help="Reference mask: white = changed, black = unchanged."
     )
+    parser.add_argument(
+        "--evaluation-mask",
+        type=Path,
+        help="White = annotated pixels to evaluate; requires --truth. Does not restrict detection.",
+    )
     parser.add_argument("--threshold", type=float, default=35)
     parser.add_argument("--min-pixels", type=int, default=25)
     parser.add_argument("--connectivity", type=int, choices=[4, 8], default=4)
@@ -57,10 +62,14 @@ def main(argv=None):
         help="A new or empty output directory.",
     )
     args = parser.parse_args(argv)
-    if args.demo and any([args.before, args.after, args.valid_mask, args.truth]):
+    if args.demo and any(
+        [args.before, args.after, args.valid_mask, args.truth, args.evaluation_mask]
+    ):
         parser.error("Use --demo on its own, or supply your own image paths and masks.")
     if not args.demo and (args.before is None or args.after is None):
         parser.error("Supply --demo or both --before and --after.")
+    if args.evaluation_mask and not args.truth:
+        parser.error("--evaluation-mask requires --truth.")
     try:
         if args.out.exists() and (not args.out.is_dir() or any(args.out.iterdir())):
             raise ValueError(
@@ -72,10 +81,12 @@ def main(argv=None):
         if args.demo:
             before, after, truth = synthetic_pair()
             valid = None
+            evaluation_mask = None
         else:
             before, after = read_rgb(args.before), read_rgb(args.after)
             truth = read_mask(args.truth) if args.truth else None
             valid = read_mask(args.valid_mask) if args.valid_mask else None
+            evaluation_mask = read_mask(args.evaluation_mask) if args.evaluation_mask else None
         analysis = analyze_pair(
             before,
             after,
@@ -83,6 +94,7 @@ def main(argv=None):
             min_pixels=args.min_pixels,
             valid_mask=valid,
             truth=truth,
+            evaluation_mask=evaluation_mask,
             connectivity=args.connectivity,
             correction=args.correction,
             synthetic=args.demo,

@@ -96,6 +96,7 @@ class CommandLineTests(unittest.TestCase):
                 ("after", after),
                 ("valid", mask),
                 ("truth", ~mask),
+                ("annotated", np.eye(3, 4, dtype=bool)),
             ):
                 (root / f"{name}.png").write_bytes(png_bytes(array))
             (root / "metadata.json").write_text('{"site": "Test site"}')
@@ -110,6 +111,8 @@ class CommandLineTests(unittest.TestCase):
                         str(root / "valid.png"),
                         "--truth",
                         str(root / "truth.png"),
+                        "--evaluation-mask",
+                        str(root / "annotated.png"),
                         "--metadata",
                         str(root / "metadata.json"),
                         "--min-pixels",
@@ -123,11 +126,15 @@ class CommandLineTests(unittest.TestCase):
             self.assertEqual(report["metadata"]["site"], "Test site")
             self.assertIsNone(report["evaluation"]["iou"])
             self.assertEqual(report["data_source"], "user_supplied_rgb_images")
+            self.assertEqual(report["evaluation_pixels"], 2)
+            self.assertTrue((root / "out/evaluation_mask.png").is_file())
 
     def test_usage_errors_are_clear(self):
         for arguments in (
             [],
             ["--demo", "--before", "x"],
+            ["--demo", "--evaluation-mask", "x"],
+            ["--before", "x", "--after", "y", "--evaluation-mask", "z"],
             ["--demo", "--threshold", "nan"],
             ["--before", "missing.png", "--after", "missing.png"],
         ):

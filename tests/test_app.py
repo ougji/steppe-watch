@@ -28,6 +28,7 @@ class InterfaceTests(unittest.TestCase):
         self.assertFalse(app.exception)
         self.assertEqual(app.metric[2].value, "1")
         self.assertEqual(app.metric[7].value, "1.000")
+        self.assertTrue(any("100.0% of usable coverage" in item.value for item in app.caption))
         app.slider(key="threshold").set_value(255).run()
         self.assertFalse(app.exception)
         self.assertEqual(app.metric[1].value, "0")
@@ -62,3 +63,4 @@ class InterfaceTests(unittest.TestCase):
         self.assertFalse(app.exception)
         self.assertFalse(app.metric)
         self.assertTrue(any("Add a before and after image" in item.value for item in app.info))
+        self.assertEqual(len(app.get("file_uploader")), 5)

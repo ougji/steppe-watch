@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Separate annotation coverage from usable-pixel exclusions in Python, CLI and app; report evaluated coverage and preserve it in exported experiments (report schema 1.1).
+
 - Preserve fractional thresholds in exported rerun commands, fixing different masks at score boundaries.
 - Export `region_labels.npy` so exact region shapes can be matched to the CSV without rerunning detection.
 - Repair the threshold-35 screenshot link.

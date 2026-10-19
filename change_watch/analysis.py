@@ -15,6 +15,7 @@ from .core import ChangeResult, detect_changes, evaluate_mask, threshold_sweep
 class Analysis:
     result: ChangeResult
     report: dict
+    evaluation_mask: np.ndarray | None = None
 
 
 def array_fingerprint(array):
@@ -58,6 +59,7 @@ def analyze_pair(
     min_pixels=25,
     valid_mask=None,
     truth=None,
+    evaluation_mask=None,
     connectivity=4,
     correction="none",
     synthetic=False,
@@ -65,6 +67,8 @@ def analyze_pair(
     sensitivity=False,
 ):
     metadata = validate_metadata(metadata)
+    if evaluation_mask is not None and truth is None:
+        raise ValueError("An evaluation mask requires a reference change mask.")
     result = detect_changes(
         before,
         after,
@@ -79,10 +83,18 @@ def analyze_pair(
         "after": array_fingerprint(after),
         "usable_mask": array_fingerprint(result.valid),
     }
+    evaluation_valid = None
     if truth is not None:
+        evaluation_valid = result.valid
+        if evaluation_mask is not None:
+            annotated = np.asarray(evaluation_mask)
+            if annotated.shape != result.valid.shape or annotated.dtype != np.bool_:
+                raise ValueError("Evaluation mask must be boolean and match the image dimensions.")
+            evaluation_valid = result.valid & annotated
         # Validate before fingerprinting/exporting a user-supplied reference.
-        evaluation = evaluate_mask(result.mask, truth, result.valid)
+        evaluation = evaluate_mask(result.mask, truth, evaluation_valid)
         inputs["reference_mask"] = array_fingerprint(truth)
+        inputs["evaluation_mask"] = array_fingerprint(evaluation_valid)
     settings = {
         key: result.summary[key]
         for key in ("threshold", "minimum_region_pixels", "connectivity", "correction")
@@ -111,7 +123,7 @@ def analyze_pair(
         )
     report = {
         **result.summary,
-        "schema_version": "1.0",
+        "schema_version": "1.1",
         "software_version": __version__,
         "run_id": run_id,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -124,11 +136,20 @@ def analyze_pair(
     }
     if truth is not None:
         report["evaluation"] = evaluation
+        report["evaluation_pixels"] = int(evaluation_valid.sum())
+        report["evaluation_fraction_of_usable"] = (
+            report["evaluation_pixels"] / report["valid_pixels"]
+        )
+        report["unevaluated_usable_pixels"] = report["valid_pixels"] - report["evaluation_pixels"]
         report["evaluation_scope"] = (
             "Synthetic pipeline check only; not evidence of real-world accuracy."
             if synthetic
-            else "User-provided reference mask on usable pixels; annotation quality is not verified."
+            else "User-provided reference on annotated, usable pixels; annotation quality is not verified."
         )
+        if report["unevaluated_usable_pixels"]:
+            warnings.append(
+                "Reference metrics cover only annotated usable pixels; detection still covers all usable pixels."
+            )
     if sensitivity:
         thresholds = sorted(
             {
@@ -141,4 +162,4 @@ def analyze_pair(
         report["sensitivity"] = threshold_sweep(
             result.score, result.valid, thresholds, min_pixels, connectivity
         )
-    return Analysis(result, report)
+    return Analysis(result, report, evaluation_valid)

@@ -31,7 +31,7 @@ def build_artifacts(analysis, before, after, truth=None):
         f"--connectivity {report['connectivity']} --correction {report['correction']}"
     )
     if truth is not None:
-        command += " --truth reference_mask.png"
+        command += " --truth reference_mask.png --evaluation-mask evaluation_mask.png"
     if "sensitivity" in report:
         command += " --sensitivity"
     command += " --out reproduced"
@@ -69,6 +69,7 @@ def build_artifacts(analysis, before, after, truth=None):
     }
     if truth is not None:
         artifacts["reference_mask.png"] = png_bytes(truth)
+        artifacts["evaluation_mask.png"] = png_bytes(analysis.evaluation_mask)
     return artifacts
 
 
