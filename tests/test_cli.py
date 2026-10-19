@@ -1,6 +1,7 @@
 import contextlib
 import io
 import json
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -14,6 +15,49 @@ from change_watch.io import png_bytes
 
 
 class CommandLineTests(unittest.TestCase):
+    def test_exported_command_preserves_fractional_threshold_and_pixels(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            before = np.zeros((3, 3, 3), dtype=np.uint8)
+            after = before.copy()
+            after[0, 0, 0] = 100
+            for name, image in (("before", before), ("after", after)):
+                (root / f"{name}.png").write_bytes(png_bytes(image))
+            target = root / "original"
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(
+                    [
+                        "--before",
+                        str(root / "before.png"),
+                        "--after",
+                        str(root / "after.png"),
+                        "--threshold",
+                        "33.333334",
+                        "--min-pixels",
+                        "1",
+                        "--out",
+                        str(target),
+                    ]
+                )
+            command = next(
+                line
+                for line in (target / "REPRODUCE.txt").read_text().splitlines()
+                if line.startswith("python -m ")
+            )
+            process = subprocess.run(
+                [sys.executable, *shlex.split(command)[1:]],
+                cwd=target,
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+            self.assertEqual(process.returncode, 0, process.stderr)
+            original = json.loads((target / "report.json").read_text())
+            replay = json.loads((target / "reproduced/report.json").read_text())
+            self.assertEqual(original["changed_pixels"], 0)
+            for key in ("threshold", "changed_pixels", "regions", "run_id"):
+                self.assertEqual(original[key], replay[key], key)
+
     def test_module_demo_creates_complete_bundle(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory) / "run"

@@ -28,7 +28,7 @@ Two satellite images of a mining site near Kokshetau, Kazakhstan, were compared 
 
 ### Threshold 35
 
-![Kokshetau image comparison at threshold 35, with 10.8% of usable pixels flagged](threshold-35(1).png)
+![Kokshetau image comparison at threshold 35, with 10.8% of usable pixels flagged](<threshold-35 (1).png>)
 
 ### Threshold 41
 
@@ -94,7 +94,7 @@ Omit `--valid-mask` if you have no usable-pixel mask. Optionally add `--truth re
 
 Use a **new or empty output directory** for each run. Add `--metadata examples/metadata.json` to record source/site/dates, `--connectivity 8` to join diagonal neighbours, `--correction median_offset` for the experimental correction, and `--sensitivity --zip` for threshold comparisons and a portable bundle. After installation, `steppe-watch` is also available as a command.
 
-Outputs retain `overlay.png`, `change_mask.png`, `difference.png` and `report.json`. They now also include decoded before/after images, the usable/reference masks, `scores.npy`, `regions.csv`, `metadata.json` and `REPRODUCE.txt`. `--zip` adds `experiment.zip`. See the [artifact reference](docs/EXPERIMENTS.md#save-and-reproduce).
+Outputs retain `overlay.png`, `change_mask.png`, `difference.png` and `report.json`. They also include decoded before/after images, the usable/reference masks, `scores.npy`, `region_labels.npy`, `regions.csv`, `metadata.json` and `REPRODUCE.txt`. The label array preserves exact region shapes and links every retained pixel to its CSV region ID. Rerun commands preserve fractional thresholds at full precision. `--zip` adds `experiment.zip`. See the [artifact reference](docs/EXPERIMENTS.md#save-and-reproduce).
 
 ## Method
 

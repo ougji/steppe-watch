@@ -27,7 +27,7 @@ def build_artifacts(analysis, before, after, truth=None):
     command = (
         "python -m change_watch --before before.png --after after.png "
         "--valid-mask usable_mask.png --metadata metadata.json "
-        f"--threshold {report['threshold']:g} --min-pixels {report['minimum_region_pixels']} "
+        f"--threshold {report['threshold']!r} --min-pixels {report['minimum_region_pixels']} "
         f"--connectivity {report['connectivity']} --correction {report['correction']}"
     )
     if truth is not None:
@@ -38,6 +38,8 @@ def build_artifacts(analysis, before, after, truth=None):
     # NPY preserves fractional scores; difference.png is only an 8-bit preview.
     score_file = io.BytesIO()
     np.save(score_file, result.score, allow_pickle=False)
+    label_file = io.BytesIO()
+    np.save(label_file, result.labels, allow_pickle=False)
     artifacts = {
         "before.png": png_bytes(before),
         "after.png": png_bytes(after),
@@ -46,6 +48,7 @@ def build_artifacts(analysis, before, after, truth=None):
         "overlay.png": png_bytes(make_overlay(after, result.mask)),
         "difference.png": png_bytes(result.score.astype(np.uint8)),
         "scores.npy": score_file.getvalue(),
+        "region_labels.npy": label_file.getvalue(),
         "report.json": (json.dumps(report, indent=2, allow_nan=False) + "\n").encode("utf-8"),
         "regions.csv": regions_csv(result.regions),
         "metadata.json": (json.dumps(report["metadata"], indent=2) + "\n").encode("utf-8"),
@@ -60,6 +63,8 @@ def build_artifacts(analysis, before, after, truth=None):
             "and evaluation remain reproducible; run IDs and timestamps may differ.\n"
             "Black pixels in difference.png may be excluded OR unchanged; consult usable_mask.png.\n"
             "Region boxes are half-open pixel coordinates, not geographic coordinates.\n"
+            "region_labels.npy contains the exact region ID at each pixel (0 = no retained region).\n"
+            "Load NPY arrays with numpy.load(path, allow_pickle=False).\n"
         ).encode("utf-8"),
     }
     if truth is not None:

@@ -168,6 +168,11 @@ class AnalysisTests(unittest.TestCase):
                 np.load(io.BytesIO(archive.read("scores.npy")), allow_pickle=False),
             )
             np.testing.assert_array_equal(analysis.result.mask, replay.result.mask)
+            labels = np.load(io.BytesIO(archive.read("region_labels.npy")), allow_pickle=False)
+            np.testing.assert_array_equal(labels, analysis.result.labels)
+            np.testing.assert_array_equal(labels > 0, replay.result.mask)
+            for region in report["regions"]:
+                self.assertEqual(int((labels == region["region_id"]).sum()), region["pixels"])
 
     def test_empty_export_has_headers_and_json_null(self):
         image = np.zeros((2, 2, 3), dtype=np.uint8)

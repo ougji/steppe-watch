@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Preserve fractional thresholds in exported rerun commands, fixing different masks at score boundaries.
+- Export `region_labels.npy` so exact region shapes can be matched to the CSV without rerunning detection.
+- Repair the threshold-35 screenshot link.
+
 ## 0.2.0 — 2026-10-14
 
 - Rebuilt the Streamlit interface around comparison, region review, evaluation and export workflows, with a responsive theme and a before/after swipe.

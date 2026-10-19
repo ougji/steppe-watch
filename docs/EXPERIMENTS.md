@@ -45,6 +45,7 @@ Use a new or empty output directory for each run; previous results are never sil
 | `overlay.png` | After image with orange candidates |
 | `difference.png` | Truncated 8-bit score preview; excluded pixels are zero |
 | `scores.npy` | Full-precision score array; load with `allow_pickle=False` |
+| `region_labels.npy` | Exact per-pixel region IDs matching `regions.csv`; zero means no retained region |
 | `regions.csv` | All region IDs, pixel counts, mean scores and bounding boxes |
 | `report.json` | Schema version, settings, counts, provenance, regions, evaluation and warnings |
 | `metadata.json` | Site, source, dates and notes |

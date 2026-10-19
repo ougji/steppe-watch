@@ -19,5 +19,6 @@ Before presenting the project, run it, understand the core method and make concr
 | --- | --- | --- | --- | --- |
 | 2026-10-04 | Establish a runnable starter | AI-assisted scaffold; personal review pending | Synthetic demo and baseline tests | Run locally and choose real pilot data |
 | 2026-10-14 | Upgrade the review and reproducibility workflow | Codex-assisted v0.2 implementation: shared pipeline, region inspection, reference evaluation, optional correction, portable exports, packaging and CI | Automated numerical, input, export/replay, CLI and app checks; synthetic data only | Personal review and documented real-data evaluation remain pending |
+| 2026-10-19 | Preserve exact exported results | Codex-assisted threshold precision fix, per-pixel region-ID export and screenshot link repair | 47 tests pass, including execution of the exported command at a fractional score boundary; lint and formatting pass | Keep annotation coverage separate from detection exclusions |
 
 Update this log with changes and outcomes as you complete them.
