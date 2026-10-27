@@ -34,6 +34,8 @@ def build_artifacts(analysis, before, after, truth=None):
         command += " --truth reference_mask.png --evaluation-mask evaluation_mask.png"
     if "sensitivity" in report:
         command += " --sensitivity"
+    if "acquisition" in report:
+        command += " --acquisition satellite_provenance.json"
     command += " --out reproduced"
     # NPY preserves fractional scores; difference.png is only an 8-bit preview.
     score_file = io.BytesIO()
@@ -70,6 +72,17 @@ def build_artifacts(analysis, before, after, truth=None):
     if truth is not None:
         artifacts["reference_mask.png"] = png_bytes(truth)
         artifacts["evaluation_mask.png"] = png_bytes(analysis.evaluation_mask)
+    if "acquisition" in report:
+        acquisition = report["acquisition"]
+        artifacts["satellite_provenance.json"] = (
+            json.dumps(acquisition, indent=2, allow_nan=False) + "\n"
+        ).encode("utf-8")
+        artifacts["aoi.geojson"] = (
+            json.dumps(
+                {"type": "Feature", "properties": {}, "geometry": acquisition["aoi"]}, indent=2
+            )
+            + "\n"
+        ).encode("utf-8")
     return artifacts
 
 

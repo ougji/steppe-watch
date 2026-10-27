@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0 — 2026-10-28
+
+- Add an editable rectangle/polygon map, satellite and street basemaps, coordinate navigation, exact bounds and region GeoJSON download.
+- Add start/end calendars and bounded endpoint windows, showing actual acquisition timestamps and keeping every scene inside the requested interval.
+- Acquire public Sentinel-2 Collection 1 L2A COG crops through paginated Earth Search without credentials; resample both dates onto one 10 m or 20 m UTM grid.
+- Screen scene-wide cloud cover and crop-level SCL cloud, shadow, cirrus, snow, unknown and missing pixels. Default to zero detected cloud/shadow and full usable region coverage, with a configurable 60 m safety buffer and joint-date coverage checks. Never silently relax the limits.
+- Reuse the RGB detector with one fixed reflectance mapping and consistent per-band scale/offset handling. Invalidate imagery when region, dates or quality settings change.
+- Add satellite provenance to report schema 1.2 and the reproducible run identity; export scene metadata, region GeoJSON, quality layers and georeferenced RGB/change/usable TIFFs. Retain provenance in offline CLI replay.
+- Add cloud, nodata, pagination, date, grid alignment, replay and satellite interface regression tests. Keep synthetic demonstrations and upload workflows.
+
 ## 0.3.0 — 2026-10-19
 
 - Add manifest-driven batch evaluation with per-pair JSON/CSV results, pooled pixel metrics, macro averages and explicit counts of defined metrics; include a runnable two-scenario synthetic benchmark.

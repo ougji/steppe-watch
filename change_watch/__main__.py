@@ -48,6 +48,9 @@ def main(argv=None):
         "--metadata", type=Path, help="JSON object: site, before_date, after_date, source, notes."
     )
     parser.add_argument(
+        "--acquisition", type=Path, help="Exported satellite_provenance.json for an offline replay."
+    )
+    parser.add_argument(
         "--sensitivity",
         action="store_true",
         help="Compare nearby thresholds without selecting one.",
@@ -100,6 +103,11 @@ def main(argv=None):
             synthetic=args.demo,
             metadata=metadata,
             sensitivity=args.sensitivity,
+            acquisition=(
+                json.loads(args.acquisition.read_text(encoding="utf-8-sig"))
+                if args.acquisition
+                else None
+            ),
         )
         artifacts = build_artifacts(analysis, before, after, truth)
         if args.zip:

@@ -4,10 +4,15 @@
 
 A Python and Streamlit workbench for comparing satellite image crops and reviewing candidate land changes around mining sites in Kazakhstan.
 
-**Status: v0.3 research prototype.** Compare aligned imagery, inspect individual regions, evaluate partial reference annotations, benchmark multiple pairs and export a reproducible experiment. The default detector is the original RGB difference baseline; an optional median brightness-offset correction supports controlled comparisons. There is no trained model. Real-image accuracy has not been measured.
+**Status: v0.4 research prototype.** Draw a region on a map, pick start/end dates and acquire a cloud-screened Sentinel-2 pair on a shared geographic grid. Compare changes, inspect individual regions, evaluate reference annotations, benchmark multiple pairs and export a reproducible experiment. The detector remains an RGB difference baseline; there is no trained model. Real-image detection accuracy has not been measured.
 
 ## What you can do
 
+- Draw and edit a rectangle or polygon on a satellite/street map, or enter exact geographic bounds.
+- Choose start/end dates using calendars; search exact dates or up to 30 days inward from each endpoint without leaving the requested interval.
+- Acquire public Sentinel-2 Collection 1 L2A crops without API keys. Screen scene-wide cloud metadata, then inspect SCL clouds, shadows, snow, missing data and usable coverage inside the exact region.
+- Default to **0% detected cloud/shadow and 100% usable region coverage**, with an extra 60 m cloud/shadow buffer. No qualifying pair means no comparison; limits are never relaxed automatically.
+- Align both acquisitions on one 10 m or 20 m UTM grid and retain actual capture dates, scene IDs, quality checks, region GeoJSON and georeferenced TIFFs in the experiment ZIP.
 - Compare before/after imagery with an orange overlay, swipe view, score map and explicit pixel exclusions.
 - Inspect ranked regions with local image crops, pixel bounding boxes, mean scores and CSV export.
 - Upload reference masks and inspect precision, recall, F1, IoU, confusion counts and an error map.
@@ -75,7 +80,9 @@ python -m pip install -e ".[dev]"
 python -m streamlit run app.py
 ```
 
-The app opens with a labelled synthetic demo. Choose **Upload images** to compare your own aligned 8-bit RGB PNG/JPEG crops, up to 4 million pixels and 25 MiB each. Optional grayscale usable/reference masks control exclusions and evaluation. The second demo scenario adds a brightness shift so you can inspect the experimental correction. No credentials or external imagery service is required. For runtime dependencies only, `python -m pip install -r requirements.txt` still works.
+The app opens in **Satellite map** mode. Draw a crop, select the two dates and click **Find clear imagery & compare**. Satellite access needs an internet connection, but no account, API key or paid imagery subscription. See the [satellite workflow](docs/SATELLITE.md) for date selection, cloud checks, limits and troubleshooting.
+
+Choose **Synthetic demo** for an offline generated example, or **Upload images** for your own aligned 8-bit RGB PNG/JPEG crops, up to 4 million pixels and 25 MiB each. Optional grayscale usable/reference masks control exclusions and evaluation. The second demo scenario adds a brightness shift so you can inspect the experimental correction. For runtime dependencies only, `python -m pip install -r requirements.txt` still works.
 
 ## Reproduce a comparison without the interface
 
@@ -108,13 +115,13 @@ This runs the baseline and brightness correction on two labelled synthetic scena
 
 ## Method
 
-1. Accept two 8-bit RGB images on the same pixel grid. The tool rejects different dimensions; the user must establish geographic alignment separately.
+1. Acquire Sentinel-2 crops on a common projected grid, or accept two aligned 8-bit RGB uploads. Uploaded imagery still requires a separate geographic alignment check.
 2. Compute the mean absolute RGB difference at each usable pixel, using signed arithmetic to prevent integer overflow.
 3. Flag pixels whose difference is strictly greater than the chosen threshold.
 4. Group four-connected pixels and discard regions smaller than the minimum region size.
 5. Report flagged pixels as a fraction of usable pixels. This is not an estimate of changed hectares or a probability of mining.
 
-An RGB difference score is sensitive to illumination, seasons, shadows and registration errors. The optional median correction assumes most usable pixels are stable and may suppress real widespread change; it is not calibrated radiometric normalization. There is no automatic cloud detection, image registration or georeferencing. Use comparable imagery and exclude unsuitable pixels.
+An RGB difference score is sensitive to illumination, seasons, shadows and registration errors. The optional median correction assumes most usable pixels are stable and may suppress real widespread change; it is not calibrated radiometric normalization. Satellite mode uses the provider's 20 m scene classification for automatic exclusions and geographic reprojection for a shared grid; it does not estimate subpixel image registration. Cloud classification can miss thin/small clouds and haze. Upload mode relies on your alignment and exclusion masks.
 
 ## Project structure
 
@@ -127,6 +134,8 @@ An RGB difference score is sensitive to illumination, seasons, shadows and regis
 | `change_watch/export.py` | Reproducible artifacts and ZIP bundles |
 | `change_watch/__main__.py` | Installable CLI |
 | `change_watch/benchmark.py` | Dataset manifests, fixed-setting comparisons and aggregate metrics |
+| `change_watch/satellite.py` | Bounded STAC search, polygon crops, SCL screening, shared grid and satellite provenance |
+| `change_watch/satellite_ui.py` | Editable map, calendar inputs, quality settings and acquisition state |
 | `tests/` | Numerical, input, CLI, export and Streamlit interaction tests |
 
 GitHub Actions runs tests and lint/format checks on Windows and Linux with Python 3.10 and 3.12, and saves a demo experiment artifact. Root `core.py` and `demo.py` preserve old imports while delegating to the package.
@@ -141,8 +150,8 @@ For future ML experiments, document the image source, acquisition dates, locatio
 
 ## Next milestone
 
-1. Add the original Kokshetau image pair, acquisition dates, location, source and processing details to make the experiment reproducible.
-2. Inspect image alignment and exclude clouds, shadows and missing data.
+1. Use the satellite workflow to document a new reproducible Kokshetau experiment; the old screenshots still lack their original inputs.
+2. Inspect residual alignment and any clouds or haze missed by the provider's classification.
 3. Create reference annotations and evaluate the baseline using precision, recall, F1 and IoU.
 4. Collect additional image pairs, train a small ML model and compare it with the baseline on held-out data.
 
@@ -153,6 +162,9 @@ See [ROADMAP.md](ROADMAP.md) for the October delivery plan and [CONTRIBUTIONS.md
 - [NumPy subtraction](https://numpy.org/doc/stable/reference/generated/numpy.subtract.html)
 - [SciPy connected-component labelling](https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.label.html)
 - [Streamlit file uploads](https://docs.streamlit.io/develop/api-reference/widgets/st.file_uploader)
+- [Element 84 Earth Search catalogue](https://earth-search.aws.element84.com/v1/collections/sentinel-2-c1-l2a)
+- [Sentinel-2 scene classification](https://sentiwiki.copernicus.eu/web/s2-processing)
+- [Rasterio virtual warping](https://rasterio.readthedocs.io/en/stable/topics/virtual-warping.html)
 
 ## Contributions
 

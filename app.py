@@ -54,7 +54,9 @@ def main():
 
     with st.sidebar:
         st.header("Your comparison")
-        source = st.radio("Image source", ["Synthetic demo", "Upload images"], key="source")
+        source = st.radio(
+            "Image source", ["Satellite map", "Synthetic demo", "Upload images"], key="source"
+        )
         if source == "Synthetic demo":
             scenario = st.selectbox(
                 "Demo scenario",
@@ -91,12 +93,24 @@ def main():
         )
         st.divider()
         st.caption(
-            f"Steppe Watch {__version__} · RGB baseline\n\nNo trained model or automatic alignment."
+            f"Steppe Watch {__version__} · RGB baseline\n\nSentinel-2 map crops use a shared geographic grid."
         )
 
     truth, valid, evaluation_mask, metadata = None, None, None, {}
+    satellite_pair, acquisition = None, None
+    previous_source = st.session_state.get("previous_source")
+    st.session_state["previous_source"] = source
     synthetic = source == "Synthetic demo"
-    if synthetic:
+    if source == "Satellite map":
+        from change_watch.satellite_ui import render_satellite_source, reset_map_view
+
+        if previous_source != source:
+            reset_map_view(st.session_state.get("satellite_aoi"))
+        satellite_pair = render_satellite_source()
+        before, after = satellite_pair.before.rgb, satellite_pair.after.rgb
+        valid, metadata = satellite_pair.valid, satellite_pair.metadata
+        acquisition = satellite_pair.provenance
+    elif synthetic:
         before, after, truth = synthetic_pair()
         if scenario == "Expansion + brightness shift":
             after = np.clip(after.astype(np.int16) + 45, 0, 255).astype(np.uint8)
@@ -176,6 +190,7 @@ def main():
                 synthetic=synthetic,
                 metadata=metadata,
                 sensitivity=sensitivity,
+                acquisition=acquisition,
             )
     except ValueError as error:
         st.error(str(error))
@@ -191,7 +206,14 @@ def main():
     columns[0].metric("Usable pixels flagged", f"{report['changed_fraction']:.1%}")
     columns[1].metric("Flagged pixels", f"{report['changed_pixels']:,}")
     columns[2].metric("Candidate regions", f"{report['candidate_regions']:,}")
-    columns[3].metric("Usable coverage", f"{report['usable_fraction']:.1%}")
+    columns[3].metric(
+        "Usable bounding crop" if satellite_pair else "Usable coverage",
+        f"{report['usable_fraction']:.1%}",
+    )
+    if satellite_pair:
+        st.caption(
+            "Pixels outside your polygon are excluded. Region coverage above uses only the selected polygon; this metric uses its rectangular crop."
+        )
     if correction_enabled:
         st.warning(
             "Brightness correction assumes most usable pixels are stable. Compare it with the baseline; it can hide widespread real change."
@@ -215,7 +237,19 @@ def main():
     with compare:
         st.subheader("The image pair, with evidence in view")
         image_columns(
-            [(before, "Before"), (after, "After"), (overlay, "Orange = flagged · slate = excluded")]
+            [
+                (
+                    before,
+                    "Before"
+                    + (f" · {metadata['before_date']}" if metadata.get("before_date") else ""),
+                ),
+                (
+                    after,
+                    "After"
+                    + (f" · {metadata['after_date']}" if metadata.get("after_date") else ""),
+                ),
+                (overlay, "Orange = flagged · slate = excluded"),
+            ]
         )
         with st.expander("Swipe between dates"):
             split = st.slider("Before image share (%)", 0, 100, 50, key="wipe")
@@ -344,9 +378,20 @@ def main():
         )
         if st.button("Prepare experiment bundle", type="primary", key="prepare"):
             with st.spinner("Packaging this comparison…"):
+                artifacts = build_artifacts(analysis, before, after, truth)
+                if satellite_pair:
+                    artifacts.update(satellite_pair.artifacts())
+                    from change_watch.satellite import geotiff_bytes
+
+                    artifacts["change_mask_georeferenced.tif"] = geotiff_bytes(
+                        result.mask.astype(np.uint8), satellite_pair.grid
+                    )
+                    artifacts["usable_mask_georeferenced.tif"] = geotiff_bytes(
+                        result.valid.astype(np.uint8), satellite_pair.grid
+                    )
                 st.session_state["bundle"] = (
                     report["run_id"],
-                    zip_artifacts(build_artifacts(analysis, before, after, truth)),
+                    zip_artifacts(artifacts),
                 )
         bundle = st.session_state.get("bundle")
         if bundle and bundle[0] == report["run_id"]:

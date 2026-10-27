@@ -4,12 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "steppe-watch"
-version = "0.3.0"
+version = "0.4.0"
 description = "Reproducible RGB change analysis for satellite image crops"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
-dependencies = ["numpy>=1.26,<3", "Pillow>=10,<13", "scipy>=1.12,<2", "streamlit>=1.50,<2"]
+dependencies = [
+    "numpy>=1.26,<3", "Pillow>=10,<13", "scipy>=1.12,<2", "streamlit>=1.50,<2",
+    "rasterio>=1.4.3,<2", "shapely>=2,<3", "requests>=2.32,<3",
+    "folium>=0.20,<1", "streamlit-folium>=0.27.4,<1",
+]
 
 [project.optional-dependencies]
 dev = ["ruff>=0.14,<0.18"]

@@ -65,8 +65,35 @@ def analyze_pair(
     synthetic=False,
     metadata=None,
     sensitivity=False,
+    acquisition=None,
 ):
     metadata = validate_metadata(metadata)
+    if acquisition is not None:
+        # Retain an independent JSON value in the identity and report. The
+        # satellite workflow supplies it; offline replay can load its export.
+        try:
+            acquisition = json.loads(json.dumps(acquisition, allow_nan=False))
+            grid = acquisition["grid"]
+            image_shape = np.shape(before)
+            if (
+                synthetic
+                or len(image_shape) != 3
+                or acquisition["schema_version"] != "1.0"
+                or acquisition["collection"] != "sentinel-2-c1-l2a"
+                or not isinstance(acquisition["aoi"], dict)
+                or acquisition["aoi"].get("type") != "Polygon"
+                or not isinstance(acquisition["aoi"].get("coordinates"), list)
+                or grid["width"] != image_shape[1]
+                or grid["height"] != image_shape[0]
+                or not isinstance(grid["crs"], str)
+                or len(grid["transform"]) != 6
+                or not all(np.isfinite(value) for value in grid["transform"])
+            ):
+                raise ValueError
+        except (ValueError, TypeError, KeyError, IndexError) as error:
+            raise ValueError(
+                "Satellite provenance must describe the matching comparison grid."
+            ) from error
     if evaluation_mask is not None and truth is None:
         raise ValueError("An evaluation mask requires a reference change mask.")
     result = detect_changes(
@@ -107,6 +134,8 @@ def analyze_pair(
         "synthetic": synthetic,
         "sensitivity": sensitivity,
     }
+    if acquisition is not None:
+        identity["acquisition"] = acquisition
     run_id = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:16]
     warnings = [
         "Matching dimensions do not verify geographic alignment.",
@@ -127,13 +156,32 @@ def analyze_pair(
         "software_version": __version__,
         "run_id": run_id,
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "data_source": "synthetic_demo" if synthetic else "user_supplied_rgb_images",
+        "data_source": (
+            "sentinel_2_collection_1"
+            if acquisition is not None
+            else "synthetic_demo"
+            if synthetic
+            else "user_supplied_rgb_images"
+        ),
         "metadata": metadata,
         "input_pixel_sha256": inputs,
         "coordinates": "zero-based pixel coordinates; x_max/y_max exclusive; no georeferencing",
         "regions": result.regions,
         "warnings": warnings,
     }
+    if acquisition is not None:
+        report["schema_version"] = "1.2"
+        report["acquisition"] = acquisition
+        report["coordinates"] = (
+            "Region boxes are zero-based, half-open pixel coordinates; "
+            "acquisition.grid maps pixel edges to the recorded projected CRS."
+        )
+        warnings[0] = (
+            "Both dates were resampled to one geographic grid; residual sensor misregistration is possible."
+        )
+        warnings.append(
+            "SCL cloud screening is imperfect and has 20 m native resolution; inspect the imagery."
+        )
     if truth is not None:
         report["evaluation"] = evaluation
         report["evaluation_pixels"] = int(evaluation_valid.sum())

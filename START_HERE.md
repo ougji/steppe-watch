@@ -19,7 +19,9 @@ python -m pip install -e ".[dev]"
 python -m streamlit run app.py
 ```
 
-Open the local URL printed in the terminal. The app starts with generated terrain, not real satellite observations.
+Open the local URL printed in the terminal. The app starts in **Satellite map** mode. Draw a region, choose start/end dates and select **Find clear imagery & compare**. The map's basemap is for navigation; the selected Sentinel-2 pair uses the dates shown in the acquisition table. Read [the satellite workflow](docs/SATELLITE.md) for cloud checks and date windows.
+
+For the offline walkthrough below, choose **Synthetic demo** in the sidebar. It uses generated terrain, not satellite observations.
 
 ## 2. Inspect the result
 
